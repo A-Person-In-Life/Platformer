@@ -12,20 +12,39 @@ GRAVITY = 1500
 
 PLATFORM_HEIGHT =int(HEIGHT * 0.05)
 PLATFORM_WIDTH = int(WIDTH * 0.05)
+PLAYER_HEIGHT = 30
+PLAYER_WIDTH = 10
 
 class Player:
     def __init__(self):
-        pass
+        self.vx
+        self.vy
+        self.gravity = GRAVITY
+        self.player = pygame.Rect(PLATFORM_WIDTH + 40, PLATFORM_HEIGHT + PLAYER_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
+
     def handleInput(self, keys):
-        "X vel only"
+        keys = pygame.key.get_pressed
+        
+        if keys[pygame.K_d]:
+            self.vx = 2
+        if keys[pygame.K_a]:
+            self.vx = -2
+
     def applyGravity(self, dt):
-    
+
+        if not self.player.bottom <= PLATFORM_HEIGHT:
+            self.player.bottom = self.player.bottom
+
     def jump(self):
         #check if onground then jump by applying jump power to vel Y
+        pass
 
     def update(self, dt, platforms, keys):
         #handles inputs, gravity and movement
+        pass
     def draw(self, screen):
+        pygame.Rect.draw(self.player)
+
 
 
 class Game:
@@ -52,6 +71,10 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+
+
+        if self.player.bottom > PLATFORM_HEIGHT:
+            self.vy = GRAVITY
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
