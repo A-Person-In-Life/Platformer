@@ -8,7 +8,8 @@ WIDTH = 1200
 FPS = 60
 
 speed = 200 
-GRAVITY = 1500
+GRAVITY = .5
+JUMP_POWER = 4
 
 PLATFORM_HEIGHT =int(HEIGHT * 0.05)
 PLATFORM_WIDTH = int(WIDTH * 0.05)
@@ -17,12 +18,11 @@ PLAYER_WIDTH = 10
 
 class Player:
     def __init__(self):
-        self.vx
-        self.vy
-        self.gravity = GRAVITY
+        self.vx = 0
+        self.vy = 0
         self.player = pygame.Rect(PLATFORM_WIDTH + 40, PLATFORM_HEIGHT + PLAYER_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
-    def handleInput(self, keys):
+    def handleInput(self):
         keys = pygame.key.get_pressed
         
         if keys[pygame.K_d]:
@@ -32,18 +32,28 @@ class Player:
 
     def applyGravity(self, dt):
 
-        if not self.player.bottom <= PLATFORM_HEIGHT:
-            self.player.bottom = self.player.bottom
+        if self.player.bottom > PLATFORM_HEIGHT:
+            self.player.bottom = self.player.bottom[0], self.player.bottom[1] + ((self.vy - GRAVITY) / dt)
+        
 
     def jump(self):
-        #check if onground then jump by applying jump power to vel Y
-        pass
+        if self.player.bottom == PLATFORM_HEIGHT:
+            self.vy = self.vy + JUMP_POWER
 
-    def update(self, dt, platforms, keys):
+
+    def update(self, dt):
         #handles inputs, gravity and movement
-        pass
+        self.handleInput()
+        self.jump()
+        self.applyGravity(dt)
+        
+
+
+
     def draw(self, screen):
-        pygame.Rect.draw(self.player)
+        pygame.draw.rect(screen,WHITE,self.player)
+        pygame.display.flip()
+
 
 
 
@@ -72,13 +82,9 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
-
-        if self.player.bottom > PLATFORM_HEIGHT:
-            self.vy = GRAVITY
-
     def update(self, dt):
         keys = pygame.key.get_pressed()
-        self.player.update(dt, self.platforms, keys)
+        self.player.update(dt)
 
     def draw(self):
         self.screen.fill(GRAY)
