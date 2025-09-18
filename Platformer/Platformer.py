@@ -18,11 +18,11 @@ PLAYER_WIDTH = 10
 
 class Player:
     def __init__(self):
-        self.vx = 0
-        self.vy = 0
+        self.vx
+        self.vy
         self.player = pygame.Rect(PLATFORM_WIDTH + 40, PLATFORM_HEIGHT + PLAYER_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT)
 
-    def handleInput(self):
+    def handleInput(self, keys):
         keys = pygame.key.get_pressed
         
         if keys[pygame.K_d]:
@@ -41,19 +41,17 @@ class Player:
             self.vy = self.vy + JUMP_POWER
 
 
-    def update(self, dt):
+    def update(self, dt, platforms, keys):
         #handles inputs, gravity and movement
-        self.handleInput()
-        self.jump()
-        self.applyGravity(dt)
+        self.handleInput
+        self.jump
+        self.applyGravity
         
 
 
 
     def draw(self, screen):
-        pygame.draw.rect(screen,WHITE,self.player)
-        pygame.display.flip()
-
+        pygame.draw.rect(self.player)
 
 
 
@@ -82,9 +80,13 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
+
+        if self.player.bottom > PLATFORM_HEIGHT:
+            self.vy = GRAVITY
+
     def update(self, dt):
         keys = pygame.key.get_pressed()
-        self.player.update(dt)
+        self.player.update(dt, self.platforms, keys)
 
     def draw(self):
         self.screen.fill(GRAY)
