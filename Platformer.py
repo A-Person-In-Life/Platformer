@@ -9,8 +9,12 @@ FPS = 60
 
 ACCEL = 1
 MAX_SPEED = 5
-GRAVITY = .5
-JUMP_POWER = -10
+JUMPGRAV = .314
+FALLGRAV = .5
+JUMP_POWER = -8
+WALL_JUMP = 15
+DASH_POWER = 25
+DASH_DURATION = 36
 
 PLATFORM_HEIGHT =int(HEIGHT * 0.05)
 PLATFORM_WIDTH = int(WIDTH * 0.05)
@@ -22,11 +26,20 @@ class Player:
         self.vx = 0
         self.vy = 0
         self.jumping = False
+        self.onWall = False
+        self.wallDir = 0
         self.canJump = True
+        self.gravityApply = True
+        self.dashDir = 0
+        self.dashStart = False
+        self.startTick = 0
+        self.endTick = 0
         self.player = pygame.Rect(PLATFORM_WIDTH + 40, PLATFORM_HEIGHT + PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
 
     def handleInput(self):
+        self.gravityApply = True
         keys = pygame.key.get_pressed()
+
         if keys[pygame.K_d]:
             self.vx = min(ACCEL+self.vx,MAX_SPEED)
         elif keys[pygame.K_a]:
@@ -34,38 +47,69 @@ class Player:
         else:
             self.vx *= .8
 
-        if keys[pygame.K_SPACE] and self.onGround() and self.canJump:
-            self.vy = JUMP_POWER
-            self.jumping = True
-            self.canJump = False
+        if keys[pygame.K_SPACE]:
+            if self.onGround() and self.canJump:
+                self.vy = JUMP_POWER
+                self.jumping = True
+                self.canJump = False
+            elif self.onWall:
+                self.vy = JUMP_POWER
+                self.vx = WALL_JUMP * self.wallDir
+                self.onWall = False
+                self.jumping = True
+                self.canJump = False
 
         if not keys[pygame.K_SPACE]:
-            if self.vy < 0:
-                self.vy += GRAVITY * 4
             self.jumping = False
-            self.canJump = True
-
+            if self.onGround():
+                self.canJump = True
+        
+        if keys[pygame.K_LSHIFT] and not self.dashStart:
+            if keys[pygame.K_d]:
+                self.dashDir = 1
+                self.dashStart = True
+            if keys[pygame.K_a]:
+                self.dashDir = -1
+                self.dashStart = True
+        
     def onGround(self):
         return (self.player.bottom >= HEIGHT - PLATFORM_HEIGHT)
+    
+    def dashing(self):
+        if self.dashStart:
+            self.startTick = pygame.time.get_ticks()
+            self.endTick = self.startTick + DASH_DURATION
+            self.dashStarted = True
+            
+        pass
 
     def applyGravity(self):
         if not self.onGround():
             if self.jumping and self.vy < 0:
-                self.vy += GRAVITY * .3
+                self.vy += JUMPGRAV * .5
             else:
-                self.vy += GRAVITY
+                self.vy += FALLGRAV
         elif (self.vy > 0):
-            self.player.bottom = HEIGHT-PLATFORM_HEIGHT
             self.vy = 0
+            self.player.bottom = HEIGHT - PLATFORM_HEIGHT
     
     def checkCollisions(self, platforms):
+        self.onWall = False
+        self.wallDir = 0
         for platform in platforms:
             if self.player.colliderect(platform):
                 if self.vx > 0:
                     self.player.right = platform.left
+                    self.wallDir = -1
+                    self.vy *= .25
+                    self.vx = 0
+                    self.onWall = True
                 elif self.vx < 0:
                     self.player.left = platform.right
-        
+                    self.wallDir = 1
+                    self.onWall = True
+                    self.vx = 0
+            
     def update(self, platforms):
         #handles inputs, gravity and movement
         self.handleInput()
@@ -73,6 +117,11 @@ class Player:
         self.player.x += self.vx
         self.player.y += self.vy
         self.checkCollisions(platforms)
+        self.debugPrint()
+
+    def debugPrint(self):
+        if (self.player.x >= WIDTH or self.player.x <= -WIDTH) or (self.player.y >= HEIGHT or self.player.y <= -HEIGHT):
+            print(f"Player out of bounds at x{self.player.x} y{self.player.y}")
 
     def draw(self, screen):
         pygame.draw.rect(screen,WHITE,self.player)
