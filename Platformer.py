@@ -36,6 +36,7 @@ class Player:
         self.endTick = 0
         self.dashCooldown = 0
         self.shiftPressed = False
+        self.canDash = True
         self.player = pygame.Rect(PLATFORM_WIDTH + 40, PLATFORM_HEIGHT + PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT)
 
     def handleInput(self):
@@ -84,7 +85,10 @@ class Player:
             pass
     def onGround(self):
         return (self.player.bottom >= HEIGHT - PLATFORM_HEIGHT)
-    
+
+    def onPlatform(self,platform):
+        return (self.player.bottom >= platform.top and self.player.top <= platform.bottom)
+
     def dashing(self):
         if not self.dashStarted:
             self.endTick = pygame.time.get_ticks() + DASH_DURATION
@@ -111,31 +115,50 @@ class Player:
                 self.vy = 0
                 self.player.bottom = HEIGHT - PLATFORM_HEIGHT
     
-    def checkCollisions(self, platforms):
+    def checkCollisions(self, walls, platforms):
         self.onWall = False
         self.wallDir = 0
-        for platform in platforms:
-            if self.player.colliderect(platform):
+        for wall in walls:
+            if self.player.colliderect(wall):
                 if self.vx > 0:
-                    self.player.right = platform.left
+                    self.player.right = wall.left
                     self.wallDir = -1
                     self.vy *= .25
                     self.vx = 0
                     self.onWall = True
                 elif self.vx < 0:
-                    self.player.left = platform.right
+                    self.player.left = wall.right
                     self.wallDir = 1
+                    self.vy *= .25
                     self.onWall = True
                     self.vx = 0
+                elif self.player.bottom == wall.top:
+                    self.vy = 0
+                    self.player.bottom = wall.top
+        for platform in platforms:
+            if self.player.colliderect(platform):
+                if not self.onPlatform:
+                    if self.vx > 0:
+                        self.player.right = platform.left
+                        self.wallDir = -1
+                        self.vy *= .25
+                        self.vx = 0
+                        self.onWall = True  
+                    elif self.vx < 0:
+                        self.player.left = platform.right
+                        self.wallDir = 1
+                        self.vy *= .25
+                        self.vx
+                        self.onWall = True
             
-    def update(self, platforms):
+    def update(self, walls, platforms):
         self.handleInput()
         if self.dashStarted:
             self.dashing()  
         self.applyGravity()
         self.player.x += self.vx
         self.player.y += self.vy
-        self.checkCollisions(platforms)
+        self.checkCollisions(walls ,platforms)
         self.debugPrint()
 
     def debugPrint(self):
@@ -152,9 +175,10 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
         self.player = Player()
-        self.platforms = [pygame.Rect(0, HEIGHT-PLATFORM_HEIGHT,WIDTH,PLATFORM_HEIGHT), 
+        self.walls = [pygame.Rect(0, HEIGHT-PLATFORM_HEIGHT,WIDTH,PLATFORM_HEIGHT), 
                           pygame.Rect(WIDTH - PLATFORM_WIDTH, 0, PLATFORM_WIDTH,HEIGHT), 
                           pygame.Rect(0, 0, PLATFORM_WIDTH, HEIGHT)]
+        self.platforms = [pygame.Rect(300,260,80,80)]
 
     def run(self):
         while self.running:
@@ -169,10 +193,11 @@ class Game:
                 self.running = False
 
     def update(self):
-        self.player.update(self.platforms[1::])
+        self.player.update(self.walls[1::],self.platforms)
 
     def draw(self):
         self.screen.fill(GRAY)
+        [pygame.draw.rect(self.screen, WHITE, wall) for wall in self.walls]
         [pygame.draw.rect(self.screen, WHITE, plat) for plat in self.platforms]
         self.player.draw(self.screen)
         pygame.display.flip()
